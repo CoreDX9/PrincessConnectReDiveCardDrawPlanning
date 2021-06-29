@@ -1,0 +1,307 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>公主连结抽卡规划 -by CoreDX</title>
+
+    <link rel="stylesheet" href="lib/element-ui/index.css" />
+    <link rel="stylesheet" href="css/index.css" />
+</head>
+<body>
+    <div id="app">
+        <p>Loding...</p>
+        <p>如果长时间显示此提示，请在电脑上用最新谷歌 Chrome 或其他现代浏览器打开。</p>
+    </div>
+    <template id="template" style="display: none">
+        <el-container>
+            <el-header>
+                公主连结抽卡规划 -by CoreDX 卡池时间为预测，不保证准确，截至2022年7月21日卡池 QQ: 171360955
+            </el-header>
+            <el-main>
+                <el-row>
+                    <el-col :span="24">
+                        <el-tabs type="border-card">
+                            <el-tab-pane label="说明">
+                                <p>本规划器由 CoreDX 制作，联系QQ：171360955。如有问题请联系以上QQ。</p>
+                                <p>由于规划方式原始，未对算法进行优化，较长周期或复杂设定的规划可能导致短时间的页面假死，请耐心等待或使用高性能计算机。</p>
+                                <p>此规划器能让玩家提前规划卡池抽取，分配预算。对无氪、微氪玩家有一定参考价值，在预算不足必须对部分卡池进行取舍时进行更精确的评估。</p>
+                                <p>卡池时间为国服预测最后一天的日期，可能由于运营计划导致偏差，动手能力较强的朋友可以自行编辑 js/cardPoolData.js 修正时间。</p>
+                                <p>卡池信息参考<a href="https://www.bilibili.com/video/BV1QK4y1r79m" target="_blank">BV1QK4y1r79m</a>。</p>
+                                <p>本规划器不支持任何 IE 浏览器，出现问题概不负责，请使用最新谷歌 Chrome 或其他现代浏览器。</p>
+                                <p>由于手机系统的安全限制，本规划器不支持直接在手机上使用。如需在手机上使用，请将规划器至少部署到 HTTP 静态文件服务器上。</p>
+                            </el-tab-pane>
+                            <el-tab-pane label="卡池列表">
+                                <el-form prefix="cardPoolForm" label-width="80px" @submit.native.prevent>
+                                    <el-card class="box-card">
+                                        <div slot="header" class="clearfix">
+                                            <el-tooltip class="item" effect="dark" content="卡池信息的时间为卡池最后一天的日期。" placement="bottom">
+                                                <span>卡池信息</span>
+                                            </el-tooltip>
+                                            <el-button style="float: right;" type="primary" @click="addCardPool">增加</el-button>
+                                            <el-button style="float: right;" type="primary" @click="sortCardPool">整理顺序</el-button>
+                                            <el-tooltip class="item" effect="dark" content="替换 js/cardPoolData.js 可永久性更新卡池信息。" placement="bottom">
+                                                <el-button style="float: right;" type="success" @click="saveCardPool">保存卡池</el-button>
+                                            </el-tooltip>
+                                        </div>
+                                        <div class="text item">
+                                            <el-form-item v-for="(value, index) in form.cardPoolList" :key="index" :label="(index + 1).toString()">
+                                                <el-col :span="5">
+                                                    <el-date-picker type="date" placeholder="时间" v-model="value.date"></el-date-picker>
+                                                </el-col>
+                                                <el-col :span="7">
+                                                    <el-input v-model="value.name">
+                                                        <template slot="prepend">
+                                                            名称
+                                                        </template>
+                                                    </el-input>
+                                                </el-col>
+                                                <el-col :span="6">
+                                                    <el-form-item label="初始星级">
+                                                        <el-input-number v-model="value.star" :min="1" :max="3"></el-input-number>
+                                                    </el-form-item>
+                                                </el-col>
+                                                <el-col :span="3">
+                                                    <el-switch v-model="value.isSpecial"
+                                                               active-text="限定"
+                                                               inactive-text="常驻">
+                                                    </el-switch>
+                                                </el-col>
+                                                <el-col :span="3">
+                                                    <el-button type="danger" @click="removeCardPool(index)">删除</el-button>
+                                                </el-col>
+                                            </el-form-item>
+                                        </div>
+                                    </el-card>
+                                </el-form>
+                            </el-tab-pane>
+                            <el-tab-pane label="基础设定">
+                                <el-form ref="form" :model="form" label-width="80px" @submit.native.prevent>
+                                    <el-form-item>
+                                        <el-button type="primary" @click="plan">开始规划</el-button>
+                                        <el-button type="warning" @click="readConfig">读取配置</el-button>
+                                        <input type="file" id="config" name="config" />
+                                        <el-button type="danger" @click="clearSelect">清除选择</el-button>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="success" @click="saveConfig">保存配置</el-button>
+                                    </el-form-item>
+                                    <el-form-item label="规划时间">
+                                        <el-col :span="11">
+                                            <el-date-picker type="date" placeholder="开始时间" v-model="form.dateStart" style="width: 100%;"></el-date-picker>
+                                        </el-col>
+                                        <el-col class="line" :span="2" style="text-align: center;">-</el-col>
+                                        <el-col :span="11">
+                                            <el-date-picker type="date" placeholder="结束时间" v-model="form.dateEnd" style="width: 100%;"></el-date-picker>
+                                        </el-col>
+                                    </el-form-item>
+                                    <el-row>
+                                        <el-col :span="12">
+                                            <el-form-item label="每日钻石固定收益">
+                                                <el-tooltip class="item" effect="dark" content="每日固定钻石收益，例如日常任务、竞技场排名奖励、月卡等长期稳定收益。115的默认值包含日常，竞技场1000名档奖励，签到奖励的每日均摊，例行维护的每日均摊，每月按30天计。" placement="bottom">
+                                                    <el-input-number v-model="form.dailyDiamond" :min="0"></el-input-number>
+                                                </el-tooltip>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="当期出货抽卡次数">
+                                                <el-tooltip class="item" effect="dark" content="抽到当期 UP 卡所需的次数，300次表示保底出货。" placement="bottom">
+                                                    <el-input-number v-model="form.getUpCardCastCount" :min="1" :max="300"></el-input-number>
+                                                </el-tooltip>
+                                                <el-tag>相当于消耗{{form.getUpCardCastCount * 150}}钻石</el-tag>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row>
+                                        <el-col :span="12">
+                                            <el-form-item label="最大临时补充次数">
+                                                <el-tooltip class="item" effect="dark" content="如果抽卡时持有钻石不足出货次数所需，您愿意通过氪金或其他手段临时补充的最大抽卡次数。实际补充次数为补足出货次数所需的最少次数。" placement="bottom">
+                                                    <el-input-number v-model="form.temporarySupplementDrawCardCount" :min="0" :max="300"></el-input-number>
+                                                </el-tooltip>
+                                                <el-tag>相当于补充{{form.temporarySupplementDrawCardCount * 150}}钻石</el-tag>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="初始钻石">
+                                                <el-tooltip class="item" effect="dark" content="开始规划时持有的钻石数量。" placement="bottom">
+                                                    <el-input-number v-model="form.startDiamond" :min="0"></el-input-number>
+                                                </el-tooltip>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row>
+                                        <el-col :span="12">
+                                            <el-form-item label="剧情活动兑换池数">
+                                                <el-tooltip class="item" effect="dark" content="每月26号结算剧情活动兑换钻石。包含活动任务，推图首通，剧情阅读等一次性奖励。默认值6池包含初始4池和无限池2池。" placement="bottom">
+                                                    <el-input-number v-model="form.eventPoolCount" :min="4"></el-input-number>
+                                                </el-tooltip>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="团队战排名奖励">
+                                                <el-tooltip class="item" effect="dark" content="每月10号结算当月团队战奖励钻石。默认值3000包含500钻一次性BOSS击杀奖励和1w名档奖励。" placement="bottom">
+                                                    <el-input-number v-model="form.teamWarDiamond" :min="500"></el-input-number>
+                                                </el-tooltip>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row>
+                                        <el-col :span="12">
+                                            <el-form-item label="每月钻石获取修正">
+                                                <el-tooltip class="item" effect="dark" content="每月15号结算修正获得的钻石，用于修正主线剧情，一次性任务更新等导致漏统计的钻石。默认值5650包含主线更新奖励，露娜塔20层奖励，复刻剧情活动推图首通奖励，双竞技场赛季奖励1000名档的每月均摊。" placement="bottom">
+                                                    <el-input-number v-model="form.monthDiamondFix" :min="0"></el-input-number>
+                                                </el-tooltip>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+
+                                        </el-col>
+                                    </el-row>
+                                    <el-form-item label="抽卡策略">
+                                        <el-tooltip class="item" effect="dark" content="如果抽卡时持有钻石不足出货次数所需（包括最大临时抽卡次数补充）时要执行的策略。如果放弃，将不会进行临时抽卡次数补充。" placement="bottom">
+                                            <el-radio-group v-model="form.drawCardPolicy">
+                                                <el-radio label="1">放弃当期卡池</el-radio>
+                                                <el-radio label="2">投入全部资源</el-radio>
+                                            </el-radio-group>
+                                        </el-tooltip>
+                                    </el-form-item>
+                                    <el-form-item label="特殊规则">
+                                        <el-checkbox v-model="form.skipNotS3">跳过非初始3星卡池</el-checkbox>
+                                        <el-checkbox v-model="form.skipNotSpecial">跳过非限定卡池</el-checkbox>
+                                        <el-tooltip class="item" effect="dark" content="在规划报告中不显示跳过的卡池。切换后需要重新规划才能生效。" placement="bottom">
+                                            <el-checkbox v-model="form.hideSkipedCardPool">隐藏跳过的卡池</el-checkbox>
+                                        </el-tooltip>
+                                    </el-form-item>
+                                    <el-form-item label="强制跳过指定卡池">
+                                        <el-select v-model="form.skipList" multiple placeholder="请选择">
+                                            <el-option v-for="(item, index) in form.cardPoolList"
+                                                       :key="index"
+                                                       :label="item.name"
+                                                       :value="item.name">
+                                                <el-tag>{{ item.name }}</el-tag>
+                                                <el-tag>初始{{ item.star }}星</el-tag>
+                                                <el-tag>{{ [item.date.getFullYear(), item.date.getMonth() + 1, item.date.getDate()].join('/') }} 结束</el-tag>
+                                                <el-tag v-if="item.isSpecial">限定</el-tag>
+                                                <el-tag v-if="!item.isSpecial">常驻</el-tag>
+                                            </el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-card class="box-card">
+                                        <div slot="header" class="clearfix">
+                                            <el-tooltip class="item" effect="dark" content="设置不规则的额外钻石补充，例如运营赠送，维护补偿，一次性氪金获得等。如果设置负数表示扣除钻石，可用于抵消免费十连的临时性等效钻石导致的误差。如果规划报告中相应卡池的执行策略是抽卡，请勿设置扣除，避免重复扣除钻石。" placement="bottom">
+                                                <span>额外补充钻石</span>
+                                            </el-tooltip>
+                                            <el-button style="float: right;" type="primary" @click="addExtraDiamond">增加</el-button>
+                                            <el-button style="float: right;" type="primary" @click="sortExtraDiamond">整理顺序</el-button>
+                                        </div>
+                                        <div class="text item">
+                                            <el-form-item v-for="(value, index) in form.extraDiamondSupplements" :key="index" :label="(index + 1).toString()">
+                                                <el-col :span="10">
+                                                    <el-date-picker type="date" placeholder="时间" v-model="value.date"></el-date-picker>
+                                                    <el-input-number v-model="value.diamond" label="数量"></el-input-number>
+                                                </el-col>
+                                                <el-col :span="10">
+                                                    <el-input v-model="value.comment">
+                                                        <template slot="prepend">
+                                                            说明
+                                                        </template>
+                                                    </el-input>
+                                                </el-col>
+                                                <el-col :span="4">
+                                                    <el-button type="danger" @click="removeExtraDiamond(index)">删除</el-button>
+                                                </el-col>
+                                            </el-form-item>
+                                        </div>
+                                    </el-card>
+                                </el-form>
+                            </el-tab-pane>
+                            <el-tab-pane label="钻石持有数走势">
+                                <el-row>
+                                    <el-col :span="24">
+                                        <div id="chart" style="width: 600px; height:400px;"></div>
+                                    </el-col>
+                                </el-row>
+                                <el-row>
+                                    <el-col :span="24">
+                                        <el-radio-group v-model="reverse">
+                                            <el-radio :label="true">倒序</el-radio>
+                                            <el-radio :label="false">正序</el-radio>
+                                        </el-radio-group>
+                                        <el-timeline :reverse="reverse">
+                                            <el-timeline-item v-for="(activity, index) in activities"
+                                                              :key="index"
+                                                              :timestamp="activity.date"
+                                                              placement="top">
+                                                <el-card>
+                                                    <h4>{{activity.event.type}}</h4>
+                                                    <p>{{activity.event.msg}}</p>
+                                                </el-card>
+                                            </el-timeline-item>
+                                        </el-timeline>
+                                    </el-col>
+                                </el-row>
+                            </el-tab-pane>
+                            <el-tab-pane label="规划报告">
+                                <el-table :data="planReport.drawCardReport"
+                                          :row-class-name="tableRowClassName"
+                                          border
+                                          style="width: 100%">
+                                    <el-table-column label="结束日期"
+                                                     width="180">
+                                        <template slot-scope="scope">
+                                            <i class="el-icon-time"></i>
+                                            <span style="margin-left: 10px">{{ [scope.row.date.getFullYear(), scope.row.date.getMonth() + 1, scope.row.date.getDate()].join('/') }}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="卡池名称"
+                                                     width="180">
+                                        <template slot-scope="scope">
+                                            <span>{{ scope.row.cardPool }}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="执行策略"
+                                                     width="180">
+                                        <template slot-scope="scope">
+                                            <span>{{ scope.row.drawCardPolicy }}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="抽卡前持有钻石(不含补充)"
+                                                     width="180">
+                                        <template slot-scope="scope">
+                                            <span>{{ scope.row.hasDiamond }}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="临时补充钻石"
+                                                     width="180">
+                                        <template slot-scope="scope">
+                                            <span>{{ scope.row.supplementedDiamond }}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="抽卡前持有钻石(含补充)"
+                                                     width="180">
+                                        <template slot-scope="scope">
+                                            <span>{{ scope.row.totalDiamond }}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="抽卡后持有钻石"
+                                                     width="180">
+                                        <template slot-scope="scope">
+                                            <span>{{ scope.row.surplusDiamond }}</span>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </el-col>
+                </el-row>
+            </el-main>
+        </el-container>
+    </template>
+    <script src="lib/linq-js/linq.min.js"></script>
+    <script src="lib/vue/vue.js"></script>
+    <script src="lib/element-ui/index.js"></script>
+    <script src="lib/echarts/echarts.js"></script>
+    <script src="js/cardPoolData.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>

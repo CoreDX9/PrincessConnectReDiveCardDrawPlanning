@@ -1,0 +1,26 @@
+﻿.el-header {
+    background-color: #B3C0D1;
+    color: #333;
+    text-align: center;
+    line-height: 60px;
+}
+.el-main {
+    background-color: #E9EEF3;
+    color: #333;
+}
+
+.el-table .success-row {
+    background: #82ff92;
+}
+
+.el-table .primary-row {
+    background: #8de0e0;
+}
+
+.el-table .warning-row {
+    background: #ffed8a;
+}
+
+.el-table .danger-row {
+    background: #ff8a8a;
+}
